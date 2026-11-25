@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pakkegeneratoren – Evenstad Musikk (prototype v2)</title>
+<style>
+:root{
+  --g900:#123528; --g800:#153e31; --g700:#195b47; --g600:#22745b; --g100:#e3efe9; --g50:#f2f7f4;
+  --ink:#16201c; --muted:#5a6762; --line:#d8e0dc; --bg:#f6f8f7; --white:#fff;
+  --warn:#8a5a00; --warnbg:#fff4dc; --err:#a32020; --errbg:#fde8e8; --ok:#17653f; --okbg:#e2f4ea; --info:#1d4f80; --infobg:#e6f0fa;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--g700)}
+:focus-visible{outline:3px solid #f0b400;outline-offset:2px}
+.sr{position:absolute;left:-9999px}
+/* top bar */
+.top{background:var(--white);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.top .in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:10px 20px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:.04em;color:var(--g800);text-decoration:none;cursor:pointer;background:none;border:0;padding:0}
+.logo .dot{width:26px;height:26px;border-radius:50%;background:var(--g700);color:#fff;display:grid;place-items:center;font-size:14px}
+.nav{display:flex;gap:18px;color:var(--muted);font-size:14px;margin-left:12px}
+.spacer{flex:1}
+.mode{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;font-size:13px}
+.mode button{border:0;background:none;padding:6px 12px;cursor:pointer}
+.mode button[aria-pressed=true]{background:var(--g800);color:#fff}
+.cart{font-size:14px;background:var(--g50);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+main{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+h1{font-size:34px;line-height:1.15;margin:.2em 0 .3em}
+h2{font-size:22px;margin:.2em 0 .5em}
+h3{font-size:17px;margin:.2em 0 .3em}
+p.lead{color:var(--muted);margin-top:0;max-width:640px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:11px 18px;font-weight:650;cursor:pointer;border:1px solid transparent;text-decoration:none}
+.btn.pri{background:var(--g700);color:#fff}
+.btn.pri:hover{background:var(--g800)}
+.btn.sec{background:var(--white);border-color:var(--line);color:var(--ink)}
+.btn.sec:hover{border-color:var(--g600)}
+.btn.ghost{background:none;border:0;color:var(--g700);padding:6px 4px;text-decoration:underline}
+.btn.small{padding:6px 10px;font-size:14px;font-weight:600}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+@media (max-width:820px){.g2,.g3,.g4{grid-template-columns:1fr}.nav{display:none}.top .in{gap:8px;padding:8px 12px}.logo{font-size:13px;letter-spacing:0}.mode button{padding:5px 8px}.cart{padding:5px 8px}.steps li{font-size:11px}.split{grid-template-columns:1fr!important}h1{font-size:28px}}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--g100);color:var(--g800)}
+.badge.warn{background:var(--warnbg);color:var(--warn)} .badge.err{background:var(--errbg);color:var(--err)} .badge.info{background:var(--infobg);color:var(--info)} .badge.gray{background:#eceeed;color:#4a5450}
+.muted{color:var(--muted)} .small{font-size:14px} .tiny{font-size:12px}
+.price{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+/* hero */
+.hero{background:var(--g800);color:#fff;border-radius:16px;padding:36px;display:grid;grid-template-columns:1.3fr 1fr;gap:24px;align-items:center}
+.hero p{color:#cfe3da}
+.hero .art{background:#0f2c22 url(data:image/svg+xml;utf8,) center/cover;border-radius:12px;min-height:200px;display:grid;place-items:center;font-size:80px;color:#5fb08f}
+@media (max-width:820px){.hero{grid-template-columns:1fr;padding:24px}}
+.uses{margin-top:28px}
+.usecard{display:block;text-align:left;width:100%;cursor:pointer;background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px;transition:.1s}
+.usecard:hover{border-color:var(--g600);transform:translateY(-1px)}
+.usecard .ic{font-size:26px}
+.usecard[aria-pressed=true]{border:2px solid var(--g700);background:var(--g50)}
+/* stepper */
+.steps{display:flex;gap:6px;margin:4px 0 18px;list-style:none;padding:0}
+.steps li{flex:1;font-size:13px;color:var(--muted)}
+.steps li .bar{height:5px;border-radius:3px;background:var(--line);margin-bottom:6px}
+.steps li.done .bar,.steps li.cur .bar{background:var(--g700)}
+.steps li.cur{color:var(--ink);font-weight:700}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;cursor:pointer}
+.opt:hover{border-color:var(--g600)}
+.opt[aria-pressed=true],.opt[aria-checked=true]{border:2px solid var(--g700);background:var(--g50)}
+.opt .box{width:22px;height:22px;border:2px solid #9aa8a2;border-radius:6px;flex:none;display:grid;place-items:center;margin-top:2px;font-size:14px;color:#fff}
+.opt[aria-checked=true] .box{background:var(--g700);border-color:var(--g700)}
+.wizfoot{display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:12px;flex-wrap:wrap}
+input[type=range]{width:100%;accent-color:var(--g700)}
+.budget-val{font-size:32px;font-weight:800;color:var(--g800)}
+/* levels */
+.level{position:relative;display:flex;flex-direction:column;gap:8px}
+.level.rec{border:2px solid var(--g700);box-shadow:0 6px 20px rgba(21,62,49,.12)}
+.level .tag{position:absolute;top:-12px;left:16px}
+.level ul{margin:4px 0 8px;padding-left:18px;font-size:14px;color:var(--muted)}
+.level .tot{font-size:26px}
+/* package page */
+.split{display:grid;grid-template-columns:1.55fr 1fr;gap:20px;align-items:start}
+.item{display:grid;grid-template-columns:52px 1fr auto;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.thumb{width:52px;height:52px;border-radius:8px;background:var(--g50);display:grid;place-items:center;font-size:24px;border:1px solid var(--line)}
+.item .nm{font-weight:650}
+.item .why{font-size:14px;color:#33413b;background:var(--g50);border-left:3px solid var(--g600);padding:8px 10px;border-radius:4px;margin-top:6px}
+.item .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.item.owned{opacity:.75}
+.item.owned .nm{text-decoration:line-through}
+.stock{font-size:13px}
+.stock.ok{color:var(--ok)} .stock.sup{color:var(--warn)}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:6px}
+.qty button{border:0;background:none;width:28px;height:28px;cursor:pointer}
+.qty span{min-width:22px;text-align:center;font-weight:650}
+.swap{margin-top:8px;padding:10px;border:1px dashed var(--g600);border-radius:8px;background:#fbfdfc}
+.swap .s{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+.swap .s:first-of-type{border-top:0}
+.sticky{position:sticky;top:76px;display:flex;flex-direction:column;gap:16px}
+.check{border-radius:var(--r);padding:16px;border:1px solid var(--line);background:var(--white)}
+.check.ok{background:var(--okbg);border-color:#b7e0c8}
+.msg{display:flex;flex-wrap:wrap;gap:6px 10px;padding:10px 12px;border-radius:8px;margin-top:8px;font-size:14px;align-items:flex-start}
+.msg > span:nth-child(2){flex:1 1 180px}
+.msg .i{font-weight:800;flex:none;width:20px;text-align:center}
+.msg.err{background:var(--errbg);color:var(--err)} .msg.warn{background:var(--warnbg);color:var(--warn)} .msg.info{background:var(--infobg);color:var(--info)} .msg.ok{background:var(--okbg);color:var(--ok)}
+.msg .fix{margin-left:30px;flex:none}
+.sum{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sum .big{font-size:30px}
+.remember li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:14px}
+.remember li:first-child{border-top:0}
+.remember ul{list-style:none;margin:0;padding:0}
+/* forms */
+label.f{display:block;font-weight:600;font-size:14px;margin:10px 0 4px}
+.inp{width:100%;padding:10px 12px;border:1px solid #b9c5c0;border-radius:8px;background:#fff}
+textarea.inp{min-height:90px}
+/* staff */
+.staffbar{background:#2b2f2d;color:#fff;padding:8px 20px;font-size:13px;text-align:center}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+tr.click{cursor:pointer} tr.click:hover{background:var(--g50)}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:14px}
+dl.kv dt{color:var(--muted)}
+/* drawer */
+.drawer{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;justify-content:flex-end;z-index:50}
+.drawer .pane{background:#fff;width:min(420px,100%);height:100%;overflow:auto;padding:24px}
+.gloss dt{font-weight:700;margin-top:12px}
+.gloss dd{margin:2px 0 0}
+/* event log */
+.evlog{position:fixed;right:12px;bottom:12px;width:300px;max-height:260px;overflow:auto;background:#111;color:#9fe0c0;font:12px/1.5 ui-monospace,Menlo,monospace;border-radius:8px;padding:10px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.evlog b{color:#fff}
+footer{max-width:1080px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:13px;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--g900);color:#fff;padding:10px 16px;border-radius:8px;z-index:60;font-size:14px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =========================================================
+   Pakkegeneratoren – prototype v2 (IS-219, gruppe 21)
+   Alle produkter er generiske og alle priser er eksempelpriser.
+   ========================================================= */
+const shortName = id => { const n=P[id].n.split(',')[0].replace(/ \(.*\)/,''); return (n.length>1 && n.charAt(1)===n.charAt(1).toLowerCase()) ? n.charAt(0).toLowerCase()+n.slice(1) : n; };
+const kr = n => n.toLocaleString('nb-NO').replace(/ /g,' ') + ' kr';
+const P = {
+ // --- mikrofoner
+ usbmic:{n:'USB-mikrofon',p:1290,ic:'🎙️',cat:'mic',caps:{usbmic:1},s:'lager',
+   why:'Kobles rett i PC-en med USB. Den enkleste løsningen – du trenger ikke lydkort.'},
+ dynmic:{n:'Dynamisk XLR-mikrofon',p:1590,ic:'🎙️',cat:'mic',caps:{xlrmic:1},s:'lager',
+   why:'Fanger stemmen din, men lite av rommet rundt – bra når PC-vifta og tastaturet er nær. Kobles med XLR-kabel til et lydkort.'},
+ bcmic:{n:'Kringkastingsmikrofon (dynamisk)',p:4290,ic:'🎙️',cat:'mic',caps:{xlrmic:1,lowgain:1},s:'lev',
+   why:'Typen mange podkastere og streamere bruker. Den gir svært lite signal, så den trenger en ekstra forsterker eller et kraftig lydkort.'},
+ condmic:{n:'Kondensatormikrofon for sang',p:1890,ic:'🎙️',cat:'mic',caps:{xlrmic:1,phantom_need:1},s:'lager',
+   why:'Fanger detaljer i stemmen og akustiske instrumenter. Trenger strøm (48 V fantommating) fra lydkortet – det har alle lydkortene i pakkene våre.'},
+ vocmic:{n:'Vokalmikrofon (dynamisk)',p:1090,ic:'🎤',cat:'mic',caps:{xlrmic:1},s:'lager',
+   why:'Solid scenemikrofon som tåler å bli holdt i hånda og tar lite lyd fra høyttalerne (mindre fare for hyl).'},
+ // --- lydkort / miksere
+ iface2:{n:'USB-lydkort, 2 innganger',p:1490,ic:'🎛️',cat:'iface',caps:{iface:1,in:2,hpout:1,phantom:1},s:'lager',
+   why:'Lydkortet gjør om signalet fra mikrofonen til noe PC-en forstår. En XLR-mikrofon kan ikke kobles rett i PC-en uten.'},
+ iface4:{n:'USB-lydkort, 4 innganger',p:2990,ic:'🎛️',cat:'iface',caps:{iface:1,in:4,hpout:2,phantom:1},s:'lev',
+   why:'Som lydkortet over, men med plass til fire mikrofoner eller instrumenter samtidig.'},
+ podmix:{n:'Podkastmikser, 4 mikrofoninnganger',p:3990,ic:'🎚️',cat:'iface',caps:{iface:1,in:4,hpout:4,phantom:1},s:'lev',
+   why:'Lydkort og mikser i ett, laget for samtaler. Hver deltaker får egen volumknapp og egen hodetelefonutgang.'},
+ inamp:{n:'Inline mikrofonforsterker (+25 dB)',p:1390,ic:'🔌',cat:'acc',caps:{inamp:1},s:'lager',
+   why:'En liten boks mellom mikrofonen og lydkortet som gir mer signal, slik at du slipper å skru lydkortet helt opp og få sus.'},
+ hpamp:{n:'Hodetelefonforsterker, 4 utganger',p:799,ic:'🎧',cat:'acc',caps:{hpout:4},s:'lager',
+   why:'Lydkortet har bare én hodetelefonutgang. Denne gjør at alle deltakerne kan høre seg selv.'},
+ // --- kabler / stativ / tilbehør
+ xlr3:{n:'XLR-kabel, 3 m',p:199,ic:'〰️',cat:'cable',caps:{xlr:1},s:'lager',
+   why:'Kabelen mellom mikrofonen og lydkortet. Følger ikke med mikrofonen.'},
+ xlr6:{n:'XLR-kabel, 6 m',p:299,ic:'〰️',cat:'cable',caps:{xlr:1},s:'lager',
+   why:'Kabel fra mikrofonen til mikseren. På en scene trengs ofte lengre kabler enn hjemme.'},
+ jack3:{n:'Instrumentkabel (jack), 3 m',p:249,ic:'〰️',cat:'cable',caps:{},s:'lager',
+   why:'Kobler gitaren rett i lydkortet.'},
+ moncab:{n:'Monitorkabler, par (jack–XLR)',p:399,ic:'〰️',cat:'cable',caps:{moncab:1},s:'lager',
+   why:'Kobler studiomonitorene til lydkortet. Følger ikke med høyttalerne.'},
+ spkcab:{n:'Signalkabel til PA-høyttaler (XLR), 10 m',p:349,ic:'〰️',cat:'cable',caps:{spkcab:1},s:'lager',
+   why:'Sender lyden fra mikseren ut til hver høyttaler. Strømkabel følger med høyttaleren, signalkabel gjør ikke.'},
+ arm:{n:'Mikrofonarm til bordet',p:699,ic:'🦾',cat:'stand',caps:{stand:1},s:'lager',
+   why:'Holder mikrofonen nær munnen uten å stå i veien for tastaturet.'},
+ armhd:{n:'Kraftig mikrofonarm',p:1190,ic:'🦾',cat:'stand',caps:{stand:1},s:'lager',
+   why:'Stivere arm som tåler tunge mikrofoner uten å synke ned.'},
+ desk:{n:'Bordstativ til mikrofon',p:349,ic:'📍',cat:'stand',caps:{stand:1},s:'lager',
+   why:'Enkelt stativ som står på bordet foran hver deltaker.'},
+ micst:{n:'Mikrofonstativ med bom',p:449,ic:'📍',cat:'stand',caps:{stand:1},s:'lager',
+   why:'Gulvstativ som kan stilles inn i høyde og vinkel – for sang eller foran en gitarforsterker.'},
+ spkst:{n:'Høyttalerstativ',p:699,ic:'🗼',cat:'stand',caps:{spkst:1},s:'lager',
+   why:'Løfter høyttaleren over publikums hoder, så lyden når hele rommet.'},
+ pop:{n:'Popfilter',p:199,ic:'⭕',cat:'acc',caps:{},s:'lager',
+   why:'Demper p- og b-lyder som ellers gir «smell» i opptaket.'},
+ shield:{n:'Refleksjonsskjerm',p:990,ic:'🧱',cat:'acc',caps:{},s:'lev',
+   why:'Skjermer mikrofonen mot ekko fra rommet når du ikke har et lydisolert rom.'},
+ di:{n:'DI-boks (passiv)',p:449,ic:'📦',cat:'acc',caps:{},s:'lager',
+   why:'Gjør om signalet fra gitar, bass eller keyboard slik at det kan gå i lang kabel til mikseren uten støy.'},
+ // --- lytte / høyttalere
+ hp:{n:'Lukkede hodetelefoner',p:699,ic:'🎧',cat:'hp',caps:{hp:1},s:'lager',
+   why:'Lukkede hodetelefoner lekker lite lyd ut, så lyden ikke havner i mikrofonen.'},
+ hpst:{n:'Studiohodetelefoner',p:1490,ic:'🎧',cat:'hp',caps:{hp:1},s:'lager',
+   why:'Mer nøyaktig lyd og bedre komfort i lange økter.'},
+ mon5:{n:'Studiomonitorer, par (5")',p:3990,ic:'🔊',cat:'spk',caps:{mon:1},s:'lager',
+   why:'Høyttalere som gjengir lyden nøytralt, slik at miksen din høres lik ut på andre anlegg.'},
+ mon8:{n:'Studiomonitorer, par (8")',p:6990,ic:'🔊',cat:'spk',caps:{mon:1},s:'lev',
+   why:'Større monitorer med mer bass – passer i litt større rom.'},
+ pa10:{n:'Aktiv PA-høyttaler 10"',p:3490,ic:'🔊',cat:'spk',caps:{pa:1},s:'lager',
+   why:'«Aktiv» betyr at forsterkeren er innebygd – du trenger ingen egen forsterker, bare strøm og signalkabel.'},
+ pa12:{n:'Aktiv PA-høyttaler 12"',p:4990,ic:'🔊',cat:'spk',caps:{pa:1},s:'lager',
+   why:'Mer volum og bass enn 10"-modellen – nok til band og arrangement for rundt 150 personer.'},
+ sub:{n:'Aktiv subwoofer 15"',p:7990,ic:'🔈',cat:'spk',caps:{},s:'lev',
+   why:'Tar seg av de dypeste tonene (bass og stortromme), så musikken får trøkk.'},
+ smon:{n:'Aktiv scenemonitor 10"',p:3490,ic:'🔈',cat:'spk',caps:{smon:1},s:'lager',
+   why:'Høyttaler som peker mot de som spiller, så de hører seg selv på scenen.'},
+ mix6:{n:'Analog mikser, 6 kanaler',p:1990,ic:'🎚️',cat:'iface',caps:{mixer:1,in:4},s:'lager',
+   why:'Samler mikrofonene og styrer volumet ut til høyttalerne. Har fire mikrofoninnganger.'},
+ mix12:{n:'Mikser, 12 kanaler med effekter',p:4990,ic:'🎚️',cat:'iface',caps:{mixer:1,in:8,aux:1},s:'lager',
+   why:'Plass til et helt band, innebygd romklang og egne utganger til scenemonitorer.'},
+ cam:{n:'Webkamera 1080p',p:990,ic:'📷',cat:'video',caps:{},s:'lager',
+   why:'Skarpere bilde enn kameraet i de fleste bærbare PC-er.'},
+ light:{n:'LED-lys med bordstativ',p:799,ic:'💡',cat:'video',caps:{},s:'lager',
+   why:'Jevnt lys i ansiktet gjør mer for bildekvaliteten enn et dyrere kamera.'},
+};
+// alternativer man kan bytte til (bare varer som passer i samme rolle)
+const ALT = {mic:['usbmic','dynmic','bcmic','condmic','vocmic'], iface:['iface2','iface4','podmix'], hp:['hp','hpst'], stand:['arm','armhd','desk','micst'],
+  mon:['mon5','mon8'], pa:['pa10','pa12'], mixer:['mix6','mix12'], xlr:['xlr3','xlr6']};
+function altsFor(id){
+  const c=P[id].caps;
+  let g = c.mixer?ALT.mixer : c.pa?ALT.pa : c.mon?ALT.mon : (P[id].cat==='iface')?ALT.iface : P[id].cat==='mic'?ALT.mic : P[id].cat==='hp'?ALT.hp : c.stand?ALT.stand : c.xlr?ALT.xlr : [];
+  if(P[id].cat==='mic' && USE && USE.key==='live') g=['vocmic','dynmic'];
+  if(P[id].cat==='mic' && USE && USE.key!=='live') g=g.filter(x=>x!=='vocmic');
+  return g.filter(x=>x!==id);
+}
+const USES = {
+ stream:{key:'stream',ic:'🎮',n:'Streaming og gaming',d:'God lyd til stream, Discord og video',
+   levels:[
+    {n:'Start',d:'Enkelt og uten lydkort',items:{usbmic:1,arm:1,pop:1,hp:1}},
+    {n:'Anbefalt',d:'XLR-mikrofon med lydkort – kan bygges ut senere',items:{dynmic:1,iface2:1,xlr3:1,arm:1,pop:1,hp:1}},
+    {n:'Pluss',d:'Kringkastingslyd, kamera og lys',items:{bcmic:1,inamp:1,iface2:1,xlr3:1,armhd:1,hpst:1,cam:1,light:1}}],
+   remember:[['Strømmen til lydkortet kommer fra USB-kabelen','incl'],['USB-kabel følger med lydkort og USB-mikrofon','incl'],['Ekstra XLR-kabel som reserve','xlr3'],['LED-lys gir bedre bilde enn et dyrere kamera','light']]},
+ pod:{key:'pod',ic:'🎙️',n:'Podkast',d:'Samtaler med to til fire personer',
+   levels:[
+    {n:'Start',d:'To personer, bordstativ',items:{dynmic:2,iface2:1,xlr3:2,desk:2,hp:2,hpamp:1}},
+    {n:'Anbefalt',d:'To personer, mikrofonarmer og popfilter',items:{dynmic:2,iface2:1,xlr3:2,arm:2,pop:2,hp:2,hpamp:1}},
+    {n:'Pluss',d:'Fire personer med podkastmikser',items:{dynmic:4,podmix:1,xlr3:4,arm:4,hp:4}}],
+   remember:[['Hver mikrofon trenger sin egen XLR-kabel','incl'],['Alle deltakere trenger hodetelefoner – og en utgang å koble dem i','incl'],['Popfilter til hver mikrofon','pop'],['Bærbar PC eller Mac å ta opp på','info']]},
+ studio:{key:'studio',ic:'🎸',n:'Hjemmestudio',d:'Spille inn sang, gitar og egne låter',
+   levels:[
+    {n:'Start',d:'Sang og gitar med hodetelefoner',items:{iface2:1,condmic:1,xlr3:1,micst:1,pop:1,hp:1,jack3:1}},
+    {n:'Anbefalt',d:'Med studiomonitorer for miksing',items:{iface2:1,condmic:1,xlr3:1,micst:1,pop:1,hpst:1,jack3:1,mon5:1,moncab:1}},
+    {n:'Pluss',d:'Fire innganger, to mikrofoner og større monitorer',items:{iface4:1,condmic:1,dynmic:1,xlr3:2,micst:2,pop:1,hpst:1,jack3:1,mon8:1,moncab:1,shield:1}}],
+   remember:[['Programvare for opptak følger ofte med lydkortet','incl'],['Monitorkabler følger ikke med høyttalerne','incl'],['Refleksjonsskjerm hvis rommet har mye ekko','shield'],['Ekstra instrumentkabel som reserve','jack3']]},
+ live:{key:'live',ic:'🎤',n:'Konsert og arrangement',d:'Lyd til band, kor, taler og fest',
+   levels:[
+    {n:'Start',d:'Tale og sang for opptil ca. 80 personer',items:{pa10:2,mix6:1,vocmic:2,xlr6:2,micst:2,spkst:2,spkcab:2}},
+    {n:'Anbefalt',d:'Band og arrangement for ca. 150 personer',items:{pa12:2,mix12:1,vocmic:4,xlr6:4,micst:4,spkst:2,spkcab:2,di:2}},
+    {n:'Pluss',d:'Med subwoofer og scenemonitorer',items:{pa12:2,sub:1,mix12:1,vocmic:4,xlr6:6,micst:4,spkst:2,spkcab:2,di:2,smon:2}}],
+   remember:[['Strømkabler følger med høyttalerne','incl'],['Skjøteledning og strømfordeler til scenen','info'],['Ekstra XLR-kabler som reserve','xlr6'],['Gaffatape til å feste kabler i gulvet','info']]},
+};
+const OWN = [
+ {k:'pc',n:'PC eller Mac',d:'Til streaming, podkast og opptak'},
+ {k:'hp',n:'Hodetelefoner',d:'Som du vil bruke videre'},
+ {k:'xlrmic',n:'Mikrofon med XLR-plugg',d:'Rund plugg med tre pinner'},
+ {k:'usbmic',n:'USB-mikrofon',d:'Kobles rett i PC-en'},
+ {k:'iface',n:'Lydkort eller mikser',d:'Boks med mikrofoninnganger'},
+ {k:'spk',n:'Høyttalere',d:'PA-høyttalere eller studiomonitorer'},
+ {k:'stand',n:'Mikrofonstativ eller -arm',d:''},
+];
+const EXP = [
+ {k:'nyb',n:'Nybegynner',d:'Jeg vet lite om lydutstyr og vil ha det forklart'},
+ {k:'litt',n:'Litt erfaren',d:'Jeg kan det grunnleggende, men vil være sikker på at alt passer'},
+ {k:'erf',n:'Erfaren',d:'Jeg vet hva jeg trenger – vis meg pakkene'},
+];
+const GLOSS = [
+ ['XLR','Rund plugg med tre pinner. Standard for mikrofoner. En XLR-mikrofon må kobles til et lydkort eller en mikser, ikke rett i PC-en.'],
+ ['Lydkort','Boks som kobler mikrofoner og instrumenter til PC-en, og som har utgang til hodetelefoner og høyttalere.'],
+ ['Fantommating (48 V)','Strøm som lydkortet sender til mikrofonen gjennom XLR-kabelen. Kondensatormikrofoner trenger det.'],
+ ['Dynamisk og kondensator','Dynamiske mikrofoner er robuste og tar lite romlyd. Kondensatormikrofoner fanger flere detaljer, men også mer av rommet.'],
+ ['Aktiv høyttaler','Høyttaler med innebygd forsterker. Trenger bare strøm og signalkabel.'],
+ ['DI-boks','Gjør om signal fra gitar, bass eller keyboard så det tåler lang kabel til mikseren.'],
+ ['Gain','Hvor mye lydkortet forsterker mikrofonsignalet. Mikrofoner med lavt signal trenger mye gain.'],
+];
+/* ---------------- state ---------------- */
+let S = {view:'home', mode:'kunde', step:0, use:null, exp:null, owned:new Set(), budget:8000, noBudget:false,
+  levelIx:null, pkg:null, openWhy:new Set(), swapFor:null, cart:null, contact:{navn:'',epost:'',kommentar:''},
+  requests:[], openReq:null, offer:null, order:null, gloss:false, evlog:false, events:[]};
+let USE=null;
+const today = new Date(2026,10,25);
+function addDays(d,n){const x=new Date(d);let k=0;while(k<n){x.setDate(x.getDate()+1);if(x.getDay()%6!==0)k++;}return x;}
+const fmtDate=d=>d.toLocaleDateString('nb-NO',{weekday:'long',day:'numeric',month:'long'});
+S.requests = [
+ {ref:'EM-2611-014',kunde:'Kari B.',epost:'kari@example.com',use:'live',level:'Anbefalt',exp:'nyb',owned:['spk'],status:'Ny',
+  items:{...USES.live.levels[1].items},kommentar:'Skal brukes til kor og taler i grendehuset, ca. 100 personer. Vi har to gamle passive høyttalere fra før – kan de brukes?',dato:'25.11.'},
+ {ref:'EM-2611-009',kunde:'Martin S.',epost:'martin@example.com',use:'studio',level:'Start',exp:'litt',owned:['pc'],status:'Tilbud sendt',
+  items:{...USES.studio.levels[0].items},kommentar:'Har en Mac fra 2015. Fungerer lydkortet med den?',dato:'24.11.',svar:'Lydkortet fungerer med macOS 10.13 og nyere uten driver. Tilbudet er gyldig i 7 dager.'},
+];
+function ev(name,params){S.events.unshift({t:new Date().toLocaleTimeString('nb-NO'),name,params}); if(S.events.length>40)S.events.pop();}
+/* ---------------- package logic ---------------- */
+function ownedRemovesCat(id){
+  const c=P[id].caps, o=S.owned;
+  if(o.has('hp') && P[id].cat==='hp') return true;
+  if(o.has('xlrmic') && c.xlrmic) return true;
+  if(o.has('usbmic') && c.usbmic) return true;
+  if(o.has('iface') && P[id].cat==='iface') return true;
+  if(o.has('spk') && (c.pa||c.mon)) return true;
+  if(o.has('stand') && c.stand && (USE.key==='stream'||USE.key==='studio')) return true;
+  return false;
+}
+function buildPkg(level){
+  const items={};
+  for(const [id,q] of Object.entries(level.items)) items[id]={q, owned:ownedRemovesCat(id)};
+  // har du egen XLR-mikrofon men pakken har USB-mikrofon -> legg til lydkort og kabel
+  if(S.owned.has('xlrmic') && items.usbmic){ items.usbmic.owned=true; if(!items.iface2 && !S.owned.has('iface')) items.iface2={q:1,owned:false,added:true}; if(!items.xlr3) items.xlr3={q:1,owned:false,added:true}; }
+  return {name:level.n, items};
+}
+function active(pkg){ return Object.entries(pkg.items).filter(([id,v])=>!v.owned && v.q>0); }
+function capCount(pkg,cap,{incOwned=false}={}){
+  let n=0; for(const [id,v] of Object.entries(pkg.items)){ if(v.q<=0) continue; if(v.owned && !incOwned) continue; const c=P[id].caps[cap]; if(c) n+= (cap==='in'||cap==='hpout')? c*1 : c*v.q; }
+  return n;
+}
+function total(pkg){ return active(pkg).reduce((s,[id,v])=>s+P[id].p*v.q,0); }
+function delivery(pkg){ const sup=active(pkg).some(([id])=>P[id].s==='lev'); return {sup, date:addDays(today, sup?5:2)}; }
+function checks(pkg){
+  const out=[]; const o=S.owned;
+  const mics = capCount(pkg,'xlrmic',{incOwned:true}) + (o.has('xlrmic') && !capCount(pkg,'xlrmic',{incOwned:true})?1:0);
+  const hasIface = capCount(pkg,'iface')>0 || capCount(pkg,'mixer')>0 || o.has('iface');
+  const isLive = USE.key==='live';
+  if(mics>0 && !hasIface){
+    out.push({lv:'err',t: isLive?'Mikrofonene må kobles til en mikser – pakken har ingen.':'En XLR-mikrofon kan ikke kobles rett i PC-en. Den trenger et lydkort.', fix: isLive?'mix6':'iface2'});
+  }
+  const inputs = capCount(pkg,'in');
+  if(mics>0 && inputs>0 && mics>inputs){ out.push({lv:'err',t:`${mics} mikrofoner, men ${isLive?'mikseren':'lydkortet'} har bare ${inputs} mikrofoninnganger.`, fix: isLive?'mix12':(USE.key==='pod'?'podmix':'iface4'), fixMode:'swapIface'}); }
+  const cables = capCount(pkg,'xlr',{incOwned:true});
+  const needCables = mics + (isLive? capCount(pkg,'smon'):0);
+  if(needCables>cables){ out.push({lv:'warn',t:`Du har ${needCables} ${isLive&&capCount(pkg,'smon')?'mikrofoner og monitorer':'mikrofoner'}, men bare ${cables} XLR-kabler.`, fix:isLive?'xlr6':'xlr3', fixQty:needCables-cables}); }
+  if(capCount(pkg,'lowgain')>0 && capCount(pkg,'inamp')===0){ out.push({lv:'warn',t:'Kringkastingsmikrofonen gir svært lite signal. Uten inline-forsterker kan lyden bli svak og suse.', fix:'inamp'}); }
+  if(o.has('xlrmic') && (USE.key==='stream'||USE.key==='pod') && capCount(pkg,'inamp')===0){ out.push({lv:'info',t:'Er mikrofonen din en kringkastingsmikrofon (f.eks. til podkast)? Mange av dem trenger en inline-forsterker.', fix:'inamp'}); }
+  const hps = capCount(pkg,'hp',{incOwned:true}) + (o.has('hp')&&capCount(pkg,'hp',{incOwned:true})===0?1:0);
+  const hpouts = capCount(pkg,'hpout');
+  if(!isLive && hpouts>0 && hps>hpouts){ out.push({lv:'warn',t:`${hps} hodetelefoner, men bare ${hpouts} hodetelefonutgang${hpouts>1?'er':''}.`, fix:'hpamp'}); }
+  const pas=capCount(pkg,'pa',{incOwned:false});
+  if(pas>0 && capCount(pkg,'mixer')===0 && !o.has('iface')){ out.push({lv:'err',t:'Høyttalerne trenger en mikser å få lyd fra.', fix:'mix6'}); }
+  if(pas>0 && capCount(pkg,'spkcab')<pas){ out.push({lv:'warn',t:`${pas} høyttalere, men ${capCount(pkg,'spkcab')} signalkabler.`, fix:'spkcab', fixQty:pas-capCount(pkg,'spkcab')}); }
+  if(capCount(pkg,'smon')>0 && capCount(pkg,'aux')===0){ out.push({lv:'err',t:'Scenemonitorene trenger en mikser med egne monitorutganger.', fix:'mix12', fixMode:'swapIface'}); }
+  if(capCount(pkg,'mon')>0 && capCount(pkg,'moncab')===0){ out.push({lv:'warn',t:'Studiomonitorene trenger kabler til lydkortet.', fix:'moncab'}); }
+  const micsInPkg = capCount(pkg,'xlrmic')+capCount(pkg,'usbmic');
+  if(micsInPkg>0 && capCount(pkg,'stand',{incOwned:true})<micsInPkg && !o.has('stand')){ out.push({lv:'info',t:'Ikke alle mikrofonene har stativ.', fix: USE.key==='live'?'micst':(USE.key==='pod'?'desk':'arm'), fixQty: micsInPkg-capCount(pkg,'stand',{incOwned:true})}); }
+  if(o.has('spk') && isLive){ out.push({lv:'info',t:'Du har egne høyttalere. Er de passive (uten innebygd forsterker), trenger du en forsterker. Send pakken til en selger for sjekk.', req:true}); }
+  if(o.has('iface')){ out.push({lv:'info',t:'Du har eget lydkort eller mikser. Sjekk at det har nok innganger og 48 V fantommating – eller la en selger sjekke det.', req:true}); }
+  if(!isLive && (capCount(pkg,'iface')>0||capCount(pkg,'usbmic')>0) && !o.has('pc')){ out.push({lv:'info',t:'Lydkort og USB-mikrofoner kobles til en PC eller Mac med USB. Pakken inneholder ikke PC.'}); }
+  return out;
+}
+/* ---------------- rendering ---------------- */
+const $app=document.getElementById('app');
+function h(s){return s;}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function topbar(){
+  return `<header class="top"><div class="in">
+   <button class="logo" data-go="home"><span class="dot">♪</span>EVENSTAD MUSIKK</button>
+   <nav class="nav" aria-label="Hovedmeny"><span>Gitar</span><span>Studio</span><span>PA og scene</span><span>Kundesenter</span></nav>
+   <span class="spacer"></span>
+   <div class="mode" role="group" aria-label="Visning"><button data-mode="kunde" aria-pressed="${S.mode==='kunde'}">Kunde</button><button data-mode="ansatt" aria-pressed="${S.mode==='ansatt'}">Ansatt</button></div>
+   ${S.mode==='kunde'?`<button class="cart" data-go="cart" aria-label="Handlekurv">🛒 ${S.cart?active(S.cart).reduce((a,[,v])=>a+v.q,0):0}</button>`:''}
+  </div></header>${S.mode==='ansatt'?'<div class="staffbar">Ansattvisning · Ordregodkjenning (internt verktøy for selgere)</div>':''}`;
+}
+function stepper(){
+  const names=['Bruk','Erfaring','Har fra før','Budsjett','Forslag'];
+  return `<ol class="steps" aria-label="Fremdrift">${names.map((n,i)=>`<li class="${i<S.step?'done':i===S.step?'cur':''}"><div class="bar"></div>${i+1}. ${n}</li>`).join('')}</ol>`;
+}
+function vHome(){
+  return `<section class="hero"><div><div class="small" style="color:#9fd3bd;font-weight:700">NYHET · PAKKEGENERATOREN</div>
+   <h1>Få et komplett oppsett som virker fra dag én</h1>
+   <p>Svar på fire korte spørsmål, så setter vi sammen utstyr som passer sammen – med alle kabler og stativ, forklart på vanlig norsk. Usikker? En av selgerne våre kan sjekke pakken før du kjøper.</p>
+   <div class="row"><button class="btn pri" data-start="">Start pakkegeneratoren</button><button class="btn ghost" style="color:#cfe3da" data-gloss>Hva betyr ordene?</button></div></div>
+   <div class="art" aria-hidden="true">🎛️</div></section>
+   <section class="uses"><h2>Hva vil du sette opp?</h2><div class="grid g4">${Object.values(USES).map(u=>`<button class="usecard" data-start="${u.key}"><div class="ic">${u.ic}</div><h3>${u.n}</h3><div class="small muted">${u.d}</div></button>`).join('')}</div></section>
+   <section style="margin-top:28px" class="grid g3">
+    <div class="card"><h3>✓ Alt passer sammen</h3><div class="small muted">Pakkesjekken varsler hvis noe mangler eller ikke kan kobles sammen.</div></div>
+    <div class="card"><h3>✓ Ingen glemte kabler</h3><div class="small muted">Kabler og stativ er med, og «Har du husket?» viser resten.</div></div>
+    <div class="card"><h3>✓ Hjelp fra en fagperson</h3><div class="small muted">Send pakken til en selger, så får du et sjekket tilbud på e-post.</div></div>
+   </section>`;
+}
+function vWizard(){
+  let body='';
+  if(S.step===0){
+    body=`<h1>Hva skal du bruke utstyret til?</h1><p class="lead">Velg det som ligner mest. Du kan endre alt senere.</p>
+    <div class="grid g2">${Object.values(USES).map(u=>`<button class="opt" aria-pressed="${S.use===u.key}" data-use="${u.key}"><span style="font-size:26px">${u.ic}</span><span><b>${u.n}</b><br><span class="small muted">${u.d}</span></span></button>`).join('')}</div>`;
+  } else if(S.step===1){
+    body=`<h1>Hvor mye kan du om lydutstyr?</h1><p class="lead">Da vet vi hvor mye vi skal forklare. Det er ingen feil svar.</p>
+    <div class="grid">${EXP.map(e=>`<button class="opt" aria-pressed="${S.exp===e.k}" data-exp="${e.k}"><span><b>${e.n}</b><br><span class="small muted">${e.d}</span></span></button>`).join('')}</div>`;
+  } else if(S.step===2){
+    body=`<h1>Hva har du fra før?</h1><p class="lead">Vi tar det ut av pakken, så du ikke betaler for noe du har – og sjekker at det nye passer med det gamle.</p>
+    <div class="grid g2" role="group" aria-label="Utstyr du har">${OWN.map(o=>`<button class="opt" role="checkbox" aria-checked="${S.owned.has(o.k)}" data-own="${o.k}"><span class="box">${S.owned.has(o.k)?'✓':''}</span><span><b>${o.n}</b>${o.d?`<br><span class="small muted">${o.d}</span>`:''}</span></button>`).join('')}</div>
+    <p class="small muted" style="margin-top:12px">Har du ingenting av dette? Gå bare videre.</p>`;
+  } else if(S.step===3){
+    body=`<h1>Hva vil du maksimalt bruke?</h1><p class="lead">Vi foreslår det beste oppsettet innenfor budsjettet, og viser alternativer over og under.</p>
+    <div class="card"><label for="bud" class="small muted">Maksbudsjett</label><div class="budget-val" id="budv">${S.noBudget?'Vet ikke ennå':kr(S.budget)}</div>
+    <input id="bud" type="range" min="2000" max="60000" step="500" value="${S.budget}" ${S.noBudget?'disabled':''} aria-valuetext="${kr(S.budget)}">
+    <div class="row small muted" style="justify-content:space-between"><span>2 000 kr</span><span>60 000 kr</span></div>
+    <button class="opt" role="checkbox" aria-checked="${S.noBudget}" data-nobudget style="margin-top:12px"><span class="box">${S.noBudget?'✓':''}</span><span>Jeg vet ikke – vis meg hva det koster</span></button></div>`;
+  }
+  const canNext = (S.step===0&&S.use)||(S.step===1&&S.exp)||S.step===2||S.step===3;
+  return `${stepper()}${body}<div class="wizfoot"><div>${S.step>0?'<button class="btn sec" data-back>← Tilbake</button>':'<button class="btn sec" data-go="home">Avbryt</button>'}
+   ${S.step===0&&S.use?' <button class="btn ghost" data-skip>Jeg er erfaren – vis pakkene direkte</button>':''}</div>
+   <button class="btn pri" data-next ${canNext?'':'disabled'}>${S.step===3?'Vis forslag →':'Neste →'}</button></div>`;
+}
+function recIndex(){
+  const tots = USE.levels.map(l=>total(buildPkg(l)));
+  if(S.noBudget) return {ix:1,tots};
+  let ix=-1; tots.forEach((t,i)=>{ if(t<=S.budget) ix=i; });
+  return {ix, tots};
+}
+function sig(pk){return active(pk).map(([id,v])=>id+v.q).sort().join('|');}
+function vLevels(){
+  const {ix:ix0,tots}=recIndex();
+  const sigs=USE.levels.map(l=>sig(buildPkg(l)));
+  const hidden=new Set(); sigs.forEach((g,i)=>{ if(i<sigs.length-1 && g===sigs[i+1]) hidden.add(i); });
+  let ix=ix0; while(hidden.has(ix)) ix++;
+  const over = ix0===-1;
+  let recIx = over?0:ix; while(hidden.has(recIx)) recIx++;
+  return `${stepper()}<h1>Tre forslag til ${USE.n.toLowerCase()}</h1>
+  <p class="lead">${S.noBudget?'Vi anbefaler det midterste – det dekker det de fleste trenger.':over?`Ingen av pakkene er innenfor ${kr(S.budget)}. Den rimeligste er ${kr(tots[0]-S.budget)} over budsjettet – du kan fjerne deler eller velge brukt utstyr i butikken.`:`Med ${kr(S.budget)} anbefaler vi <b>${USE.levels[recIx].n}</b>. Alle forslagene er sjekket, slik at delene passer sammen.`}${S.owned.size?' Utstyr du har fra før er trukket fra.':''}</p>
+  ${hidden.size?`<p class="small muted">Fordi du har egen mikrofon, blir «${[...hidden].map(i=>USE.levels[i].n).join('», «')}» det samme som neste nivå og vises ikke.</p>`:''}<div class="grid ${USE.levels.length-hidden.size===2?'g2':'g3'}" style="margin-top:22px">${USE.levels.map((l,i)=>{if(hidden.has(i))return '';const pk=buildPkg(l);const t=tots[i];const inB=S.noBudget||t<=S.budget;return `
+   <div class="card level ${i===recIx?'rec':''}">${i===recIx?`<span class="tag badge">${over?'Rimeligste':'Anbefalt for deg'}</span>`:''}
+    <h2 style="margin-bottom:0">${l.n}</h2><div class="small muted">${l.d}</div>
+    <ul>${active(pk).slice(0,6).map(([id,v])=>`<li>${v.q>1?v.q+' × ':''}${P[id].n}</li>`).join('')}${active(pk).length>6?`<li>+ ${active(pk).length-6} til</li>`:''}</ul>
+    <div class="price tot">${kr(t)}</div>
+    <div>${S.noBudget?'':inB?'<span class="badge">Innenfor budsjett</span>':`<span class="badge warn">${kr(t-S.budget)} over budsjett</span>`} <span class="badge gray">${delivery(pk).sup?'Levering 3–5 dager':'På lager'}</span></div>
+    <button class="btn ${i===recIx?'pri':'sec'}" data-level="${i}" style="margin-top:8px;justify-content:center">Se og tilpass</button></div>`}).join('')}</div>
+  <div class="wizfoot"><button class="btn sec" data-back>← Endre svar</button><span class="small muted">Priser er eksempelpriser inkl. mva.</span></div>`;
+}
+function itemRow(id,v,{staff=false}={}){
+  const it=P[id]; const nyb = S.exp==='nyb' && !staff;
+  const showWhy = S.openWhy.has(id) || nyb;
+  const alts = altsFor(id);
+  return `<div class="item ${v.owned?'owned':''}" id="it-${id}"><div class="thumb" aria-hidden="true">${it.ic}</div>
+   <div><div class="nm">${it.n}${v.added?' <span class="badge info">Lagt til av pakkesjekken</span>':''}</div>
+    <div class="small muted">${v.owned?'Du har denne fra før – ikke med i prisen':`${kr(it.p)} per stk · <span class="stock ${it.s==='lager'?'ok':'sup'}">${it.s==='lager'?'● På lager i Grimstad':'● Fra leverandør, 3–5 dager'}</span>`}</div>
+    ${showWhy?`<div class="why"><b>Hvorfor trenger jeg denne?</b> ${it.why}</div>`:''}
+    <div class="acts">
+     ${!nyb?`<button class="btn ghost small" data-why="${id}" aria-expanded="${showWhy}">${showWhy?'Skjul forklaring':'Hvorfor trenger jeg denne?'}</button>`:''}
+     ${v.owned?`<button class="btn sec small" data-unown="${id}">Jeg vil likevel ha denne</button>`:`${alts.length?`<button class="btn sec small" data-swap="${id}" aria-expanded="${S.swapFor===id}">Bytt</button>`:''}<button class="btn sec small" data-remove="${id}">Fjern</button>`}
+    </div>
+    ${S.swapFor===id?`<div class="swap" role="region" aria-label="Alternativer"><div class="small"><b>Alternativer som passer i pakken</b></div>${alts.map(a=>`<div class="s"><span>${P[a].n}<br><span class="tiny muted">${P[a].why}</span></span><span class="row"><span class="price">${kr(P[a].p)}</span><button class="btn sec small" data-swapto="${a}">Velg</button></span></div>`).join('')}</div>`:''}
+   </div>
+   <div style="text-align:right">${v.owned?'':`<div class="price">${kr(it.p*v.q)}</div><div class="qty" style="margin-top:6px" aria-label="Antall"><button data-qty="${id}" data-d="-1" aria-label="Færre">−</button><span>${v.q}</span><button data-qty="${id}" data-d="1" aria-label="Flere">+</button></div>`}</div></div>`;
+}
+function checkPanel(pkg,{staff=false}={}){
+  const cs=checks(pkg); const bad=cs.filter(c=>c.lv!=='info');
+  return `<div class="check ${bad.length?'':'ok'}" aria-live="polite"><h3>${bad.length?'⚠ Pakkesjekk: noe bør ordnes':'✓ Pakkesjekk: alt passer sammen'}</h3>
+   ${bad.length?'':`<div class="small">Alle mikrofoner har kabel og inngang${USE.key==='live'?', og høyttalerne har mikser og signalkabler':''}.</div>`}
+   ${cs.map(c=>`<div class="msg ${c.lv}"><span class="i">${c.lv==='err'?'✕':c.lv==='warn'?'!':'i'}</span><span>${c.t}</span>${c.fix?`<button class="btn sec small fix" data-fix="${c.fix}" data-fq="${c.fixQty||1}" data-fm="${c.fixMode||''}">${c.fixMode==='swapIface'?'Bytt til ':'Legg til '}${shortName(c.fix)}</button>`:''}${c.req&&!staff?`<button class="btn sec small fix" data-go="request">Spør en selger</button>`:''}</div>`).join('')}
+  </div>`;
+}
+function vPackage(){
+  const pkg=S.pkg; const t=total(pkg); const d=delivery(pkg); const cs=checks(pkg); const errs=cs.filter(c=>c.lv==='err');
+  const list=Object.entries(pkg.items).filter(([,v])=>v.q>0);
+  const rem=USE.remember;
+  return `${stepper()}<div class="row" style="justify-content:space-between"><div><div class="small muted">${USE.n} · ${pkg.name}</div><h1 style="margin-top:0">Din pakke</h1></div>
+   <button class="btn ghost" data-gloss>Ordliste: hva betyr ordene?</button></div>
+  <div class="split"><div class="card"><h2>Innhold (${active(pkg).reduce((a,[,v])=>a+v.q,0)} varer)</h2>${list.map(([id,v])=>itemRow(id,v)).join('')}
+   <div style="margin-top:12px"><button class="btn sec small" data-go="levels">← Se de andre nivåene</button></div></div>
+   <aside class="sticky">
+    ${checkPanel(pkg)}
+    <div class="card"><div class="sum"><span>Pakkepris</span><span class="price big">${kr(t)}</span></div>
+     <div class="small muted">Sum av enkeltprisene · inkl. mva. · ${S.noBudget?'':t<=S.budget?`<span style="color:var(--ok)">${kr(S.budget-t)} under budsjettet</span>`:`<span style="color:var(--warn)">${kr(t-S.budget)} over budsjettet</span>`}</div>
+     <div class="small" style="margin-top:8px">🚚 Alt sendes samlet · ventet levert <b>${fmtDate(d.date)}</b></div>
+     <div class="small muted">↩ 14 dagers angrerett</div>
+     <div class="grid" style="margin-top:14px;gap:8px">
+      <button class="btn pri" data-buy ${errs.length?'disabled':''} style="justify-content:center">Legg hele pakken i handlekurven</button>
+      ${errs.length?'<div class="tiny" style="color:var(--err)">Ordne det røde i pakkesjekken først – eller spør en selger.</div>':''}
+      <button class="btn sec" data-go="request" style="justify-content:center">Usikker? Få pakken sjekket av en selger</button>
+     </div></div>
+    <div class="card remember"><h3>Har du husket?</h3><ul>${rem.map(([t,a])=>`<li><span>${t}</span>${a==='incl'?'<span class="badge">Følger med</span>':a==='info'?'<span class="badge gray">Ikke med</span>':pkg.items[a]&&pkg.items[a].q>0&&!pkg.items[a].owned?'<span class="badge">I pakken</span>':`<button class="btn sec small" data-add="${a}">+ ${kr(P[a].p)}</button>`}</li>`).join('')}</ul></div>
+   </aside></div>`;
+}
+function vRequest(){
+  const pkg=S.pkg; const t=total(pkg);
+  return `<h1>Få pakken sjekket av en selger</h1><p class="lead">En selger i Grimstad ser på pakken og utstyret du har fra før, og sender deg et tilbud på e-post – vanligvis innen én virkedag. Det er gratis og uforpliktende.</p>
+  <div class="split"><form class="card" id="reqform" novalidate>
+   <label class="f" for="navn">Navn</label><input class="inp" id="navn" autocomplete="name" value="${esc(S.contact.navn)}" required>
+   <label class="f" for="epost">E-post</label><input class="inp" id="epost" type="email" autocomplete="email" value="${esc(S.contact.epost)}" required>
+   <label class="f" for="komm">Hva lurer du på? <span class="muted">(valgfritt)</span></label>
+   <textarea class="inp" id="komm" placeholder="F.eks. «Mikrofonen jeg har fra før er en …» eller «Vi trenger lyd til 100 personer»">${esc(S.contact.kommentar)}</textarea>
+   <div id="formerr" class="small" style="color:var(--err);min-height:1.4em" role="alert"></div>
+   <div class="row" style="margin-top:6px"><button class="btn pri" type="submit">Send til selger</button><button class="btn sec" type="button" data-go="package">Tilbake til pakken</button></div>
+   <p class="tiny muted">Vi bruker opplysningene bare til å svare på forespørselen.</p></form>
+   <aside class="card"><h3>Pakken du sender</h3><div class="small muted">${USE.n} · ${pkg.name}</div>
+    <ul class="small">${active(pkg).map(([id,v])=>`<li>${v.q>1?v.q+' × ':''}${P[id].n}</li>`).join('')}</ul>
+    ${S.owned.size?`<div class="small"><b>Har fra før:</b> ${[...S.owned].map(k=>OWN.find(o=>o.k===k).n).join(', ')}</div>`:''}
+    <div class="sum" style="margin-top:10px"><span>Foreløpig pris</span><span class="price">${kr(t)}</span></div></aside></div>`;
+}
+function vRequestSent(){
+  const r=S.requests[0];
+  return `<div class="card" style="max-width:640px"><div class="badge">Forespørsel sendt</div><h1>Takk, ${esc(r.kunde.split(' ')[0])}!</h1>
+   <p>Referanse <b>${r.ref}</b>. En selger sjekker pakken og svarer deg på <b>${esc(r.epost)}</b>, vanligvis innen én virkedag.</p>
+   <p class="small muted">I tilbudet ser du hva selgeren eventuelt har endret og hvorfor. Du kan godta tilbudet og betale med ett klikk.</p>
+   <div class="row"><button class="btn pri" data-go="home">Til forsiden</button><button class="btn sec" data-mode="ansatt">Prototype: se forespørselen som selger →</button></div></div>`;
+}
+function vCart(){
+  if(!S.cart) return `<h1>Handlekurven er tom</h1><button class="btn pri" data-start="">Start pakkegeneratoren</button>`;
+  const pkg=S.cart, t=total(pkg), d=delivery(pkg);
+  return `<h1>Kasse</h1><p class="lead">Testbestilling – ingen betaling blir trukket.</p>
+  <div class="split"><div class="card"><h2>Levering</h2>
+   <label class="f" for="cn">Navn</label><input class="inp" id="cn" value="${esc(S.contact.navn||'')}" autocomplete="name">
+   <label class="f" for="ca">Adresse</label><input class="inp" id="ca" placeholder="Gate, postnummer og sted" autocomplete="street-address">
+   <div class="small" style="margin-top:12px">🚚 Alt sendes i én pakke · ventet levert <b>${fmtDate(d.date)}</b></div>
+   <div class="row" style="margin-top:16px"><button class="btn pri" data-order>Bekreft testbestilling</button><button class="btn sec" data-go="package">Tilbake</button></div></div>
+   <aside class="card"><h3>${esc(pkg.title||USE.n+' · '+pkg.name)}</h3><ul class="small">${active(pkg).map(([id,v])=>`<li>${v.q>1?v.q+' × ':''}${P[id].n} – ${kr(P[id].p*v.q)}</li>`).join('')}</ul>
+    <div class="sum"><span>Totalt inkl. mva.</span><span class="price big">${kr(t)}</span></div></aside></div>`;
+}
+function vOrder(){
+  return `<div class="card" style="max-width:640px"><div class="badge">Ordre bekreftet</div><h1>Takk for bestillingen!</h1>
+  <p>Ordrenummer <b>${S.order.no}</b> · ${kr(S.order.total)} · ventet levert <b>${fmtDate(S.order.date)}</b>.</p>
+  <p class="small muted">Etter levering får du en e-post med en kom-i-gang-guide for pakken din (planlagt i neste versjon).</p>
+  <button class="btn pri" data-go="home">Til forsiden</button></div>`;
+}
+function vOffer(){
+  const r=S.offer; USE=USES[r.use]; const pkg={name:r.level,items:Object.fromEntries(Object.entries(r.items).map(([k,q])=>[k,{q,owned:false}]))};
+  return `<div class="badge">Tilbud fra Evenstad Musikk</div><h1>Ditt sjekkede pakketilbud</h1><p class="lead">Ref. ${r.ref} · gyldig i 7 dager</p>
+  <div class="split"><div class="card"><h2>${USE.n} · ${r.level}</h2>${active(pkg).map(([id,v])=>`<div class="item"><div class="thumb">${P[id].ic}</div><div><div class="nm">${v.q>1?v.q+' × ':''}${P[id].n}${r.changed&&r.changed.includes(id)?' <span class="badge info">Endret av selger</span>':''}</div><div class="small muted">${P[id].why}</div></div><div class="price">${kr(P[id].p*v.q)}</div></div>`).join('')}</div>
+  <aside class="sticky"><div class="card"><h3>Hilsen fra selgeren</h3><p class="small">${esc(r.svar||'')}</p><div class="small muted">– Selger, Evenstad Musikk</div></div>
+   <div class="card"><div class="sum"><span>Tilbudspris</span><span class="price big">${kr(total(pkg))}</span></div>
+   <button class="btn pri" data-acceptoffer style="width:100%;justify-content:center;margin-top:10px">Godta og gå til kassen</button></div></aside></div>`;
+}
+/* ---------- ansatt ---------- */
+function vStaffList(){
+  return `<h1>Ordregodkjenning</h1><p class="lead">Pakkeforespørsler fra nettbutikken. Pakkesjekken har allerede kontrollert kompatibilitet – du sjekker det den ikke kan vite, særlig kundens eget utstyr.</p>
+  <div class="card"><table><thead><tr><th>Ref.</th><th>Kunde</th><th>Bruk / nivå</th><th>Sum</th><th>Flagg</th><th>Status</th><th>Mottatt</th></tr></thead><tbody>
+  ${S.requests.map((r,i)=>{USE=USES[r.use];const pkg=reqPkg(r);const f=checksFor(r,pkg);return `<tr class="click" data-openreq="${i}" tabindex="0"><td><b>${r.ref}</b></td><td>${esc(r.kunde)}</td><td>${USES[r.use].n}<br><span class="tiny muted">${r.level}</span></td><td class="price">${kr(total(pkg))}</td>
+   <td>${r.owned.length?'<span class="badge info">Eget utstyr</span> ':''}${f.some(c=>c.lv==='err')?'<span class="badge err">Feil</span>':f.some(c=>c.lv==='warn')?'<span class="badge warn">Varsel</span>':''}${r.exp==='nyb'?' <span class="badge gray">Nybegynner</span>':''}</td>
+   <td>${r.status==='Ny'?'<span class="badge warn">Ny</span>':r.status==='Tilbud sendt'?'<span class="badge">Tilbud sendt</span>':'<span class="badge gray">'+r.status+'</span>'}</td><td>${r.dato}</td></tr>`}).join('')}
+  </tbody></table></div>
+  <p class="small muted" style="margin-top:12px">Snitt behandlingstid denne uken: 3 t 40 min (eksempel). Mål: svar innen én virkedag.</p>`;
+}
+function reqPkg(r){return {name:r.level,items:Object.fromEntries(Object.entries(r.items).map(([k,q])=>[k,{q,owned:false}]))};}
+function checksFor(r,pkg){ const keep=S.owned; S.owned=new Set(r.owned); const res=checks(pkg); S.owned=keep; return res; }
+function vStaffDetail(){
+  const r=S.requests[S.openReq]; USE=USES[r.use]; const pkg=reqPkg(r);
+  const keep=S.owned; S.owned=new Set(r.owned); const panel=checkPanel(pkg,{staff:true}); S.owned=keep;
+  const addable=Object.keys(P).filter(id=>!r.items[id]);
+  return `<button class="btn ghost" data-staffback>← Alle forespørsler</button>
+  <div class="row" style="justify-content:space-between"><h1 style="margin:0">${r.ref} · ${esc(r.kunde)}</h1>${r.status==='Ny'?'<span class="badge warn">Ny</span>':'<span class="badge">'+r.status+'</span>'}</div>
+  <div class="split" style="margin-top:16px"><div class="grid">
+   <div class="card"><h3>Kundens svar i veiviseren</h3><dl class="kv"><dt>Bruk</dt><dd>${USE.n}</dd><dt>Nivå</dt><dd>${r.level}</dd><dt>Erfaring</dt><dd>${EXP.find(e=>e.k===r.exp).n}</dd><dt>Har fra før</dt><dd>${r.owned.length?r.owned.map(k=>OWN.find(o=>o.k===k).n).join(', '):'Ingenting'}</dd><dt>E-post</dt><dd>${esc(r.epost)}</dd></dl>
+    ${r.kommentar?`<div class="why" style="margin-top:10px"><b>Kunden skriver:</b> «${esc(r.kommentar)}»</div>`:''}</div>
+   <div class="card"><h3>Pakken</h3>${Object.entries(r.items).filter(([,q])=>q>0).map(([id,q])=>`<div class="item"><div class="thumb">${P[id].ic}</div><div><div class="nm">${P[id].n}${r.changed&&r.changed.includes(id)?' <span class="badge info">Endret</span>':''}</div><div class="small muted">${kr(P[id].p)} · ${P[id].s==='lager'?'På lager':'Leverandør 3–5 d'}</div>
+     ${r.status!=='Tilbud sendt'&&altsFor(id).length?`<label class="tiny muted">Bytt til <select class="inp" style="padding:4px;width:auto" data-sswap="${id}"><option value="">–</option>${altsFor(id).map(a=>`<option value="${a}">${P[a].n} (${kr(P[a].p)})</option>`).join('')}</select></label>`:''}</div>
+     <div style="text-align:right"><div class="price">${kr(P[id].p*q)}</div>${r.status!=='Tilbud sendt'?`<div class="qty" style="margin-top:6px"><button data-sqty="${id}" data-d="-1" aria-label="Færre">−</button><span>${q}</span><button data-sqty="${id}" data-d="1" aria-label="Flere">+</button></div>`:`<div class="small muted">${q} stk</div>`}</div></div>`).join('')}
+    ${r.status!=='Tilbud sendt'?`<div class="row" style="margin-top:10px"><select class="inp" style="width:auto" id="sadd"><option value="">Legg til vare …</option>${addable.map(a=>`<option value="${a}">${P[a].n} (${kr(P[a].p)})</option>`).join('')}</select><button class="btn sec small" data-saddbtn>Legg til</button></div>`:''}
+    <div class="sum" style="margin-top:12px"><span>Sum</span><span class="price big">${kr(total(pkg))}</span></div></div></div>
+   <aside class="sticky">${panel}
+    <div class="card"><h3>Svar til kunden</h3>${r.status==='Tilbud sendt'?`<p class="small">${esc(r.svar||'')}</p><button class="btn sec" data-viewoffer="${S.openReq}">Se tilbudet slik kunden ser det →</button>`:`
+     <div class="small muted">Vises øverst i tilbudet. Forklar endringer med vanlige ord.</div>
+     <div class="row" style="margin:8px 0;gap:6px"><button class="btn sec small" data-tpl="1">Mal: alt passer</button><button class="btn sec small" data-tpl="2">Mal: endret</button><button class="btn sec small" data-tpl="3">Mal: eget utstyr</button></div>
+     <textarea class="inp" id="svar">${esc(r.svarUtkast||'')}</textarea>
+     <div class="grid" style="gap:8px;margin-top:10px"><button class="btn pri" data-approve style="justify-content:center">Godkjenn og send tilbud</button><button class="btn sec" data-askinfo style="justify-content:center">Be kunden om mer informasjon</button></div>`}</div>
+   </aside></div>`;
+}
+/* ---------- glossary + event log ---------- */
+function vGloss(){ return S.gloss?`<div class="drawer"><div class="pane" role="dialog" aria-modal="true" aria-label="Ordliste"><div class="row" style="justify-content:space-between"><h2>Ordliste</h2><button class="btn sec small" data-closegloss>Lukk</button></div><dl class="gloss">${GLOSS.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></div></div>`:''; }
+function vEv(){ return S.evlog?`<div class="evlog" aria-label="Målepunkter"><b>GA4-målepunkter (testvisning)</b><br>${S.events.map(e=>`${e.t} <b>${e.name}</b> ${e.params?esc(JSON.stringify(e.params)):''}`).join('<br>')||'Ingen hendelser ennå'}</div>`:''; }
+function render(){
+  let v='';
+  if(S.mode==='ansatt'){ v = S.openReq===null?vStaffList():vStaffDetail(); }
+  else switch(S.view){
+    case 'home': v=vHome(); break;
+    case 'wizard': v=vWizard(); break;
+    case 'levels': USE=USES[S.use]; v=vLevels(); break;
+    case 'package': USE=USES[S.use]; v=vPackage(); break;
+    case 'request': USE=USES[S.use]; v=vRequest(); break;
+    case 'sent': v=vRequestSent(); break;
+    case 'cart': v=vCart(); break;
+    case 'order': v=vOrder(); break;
+    case 'offer': v=vOffer(); break;
+  }
+  $app.innerHTML = topbar()+`<main id="main">${v}</main><footer><span>Prototype v2 · IS-219 gruppe 21 · Generiske produkter og eksempelpriser</span><span><button class="btn ghost small" data-evlog>${S.evlog?'Skjul':'Vis'} målepunkter</button></span></footer>`+vGloss()+vEv();
+  const r=document.getElementById('bud'); if(r) r.oninput=e=>{S.budget=+e.target.value;document.getElementById('budv').textContent=kr(S.budget);e.target.setAttribute('aria-valuetext',kr(S.budget));};
+  const f=document.getElementById('reqform'); if(f) f.onsubmit=submitReq;
+}
+function go(view){ S.view=view; S.swapFor=null; render(); window.scrollTo(0,0); }
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2200);}
+function submitReq(e){
+  e.preventDefault();
+  const navn=document.getElementById('navn').value.trim(), ep=document.getElementById('epost').value.trim(), k=document.getElementById('komm').value.trim();
+  S.contact={navn,epost:ep,kommentar:k};
+  if(!navn||!/^\S+@\S+\.\S+$/.test(ep)){ document.getElementById('formerr').textContent='Fyll inn navn og en gyldig e-postadresse.'; return; }
+  const items=Object.fromEntries(active(S.pkg).map(([id,v])=>[id,v.q]));
+  S.requests.unshift({ref:'EM-2611-0'+(20+S.requests.length),kunde:navn,epost:ep,use:S.use,level:S.pkg.name,exp:S.exp||'litt',owned:[...S.owned],status:'Ny',items,kommentar:k,dato:'25.11.'});
+  ev('generate_lead',{pakke:S.use+'/'+S.pkg.name,value:total(S.pkg)});
+  go('sent');
+}
+document.addEventListener('click',e=>{
+  if(e.target.classList && e.target.classList.contains('drawer')){S.gloss=false;render();return;}
+  const t=e.target.closest('button,tr[data-openreq]'); if(!t) return;
+  const d=t.dataset;
+  if('closegloss' in d){S.gloss=false;render();return;}
+  if(d.go){ if(d.go==='request' && !S.pkg) return; go(d.go); return; }
+  if(d.mode){ S.mode=d.mode; S.openReq=null; if(d.mode==='ansatt'&&S.requests[0]&&S.requests[0].status==='Ny'&&S.view==='sent'){S.openReq=0;} render(); window.scrollTo(0,0); return; }
+  if('start' in d){ S.use=d.start||null; S.step=d.start?1:0; S.view='wizard'; ev('select_promotion',{bruk:S.use||'ikke valgt'}); render(); window.scrollTo(0,0); return; }
+  if(d.use){ S.use=d.use; render(); return; }
+  if(d.exp){ S.exp=d.exp; render(); return; }
+  if(d.own){ S.owned.has(d.own)?S.owned.delete(d.own):S.owned.add(d.own); render(); return; }
+  if('nobudget' in d){ S.noBudget=!S.noBudget; render(); return; }
+  if('back' in d){ if(S.view==='levels'){S.view='wizard';S.step=3;} else S.step=Math.max(0,S.step-1); render(); return; }
+  if('skip' in d){ S.exp='erf'; S.noBudget=true; S.step=4; go('levels'); ev('view_item_list',{bruk:S.use,hoppet_over:true}); return; }
+  if('next' in d){ if(S.step<3){S.step++;render();window.scrollTo(0,0);} else {S.step=4; go('levels'); ev('view_item_list',{bruk:S.use,budsjett:S.noBudget?'vet ikke':S.budget});} return; }
+  if(d.level!==undefined){ USE=USES[S.use]; S.levelIx=+d.level; S.pkg=buildPkg(USE.levels[S.levelIx]); S.openWhy=new Set(); ev('select_item',{pakke:S.use+'/'+USE.levels[S.levelIx].n}); go('package'); return; }
+  if(d.why){ S.openWhy.has(d.why)?S.openWhy.delete(d.why):S.openWhy.add(d.why); render(); return; }
+  if(d.swap){ S.swapFor = S.swapFor===d.swap?null:d.swap; render(); return; }
+  if(d.swapto){ const from=S.swapFor; const q=S.pkg.items[from].q; delete S.pkg.items[from]; S.pkg.items[d.swapto]={q,owned:false}; S.swapFor=null; ev('pakke_bytt',{fra:from,til:d.swapto}); render(); toast('Byttet til '+P[d.swapto].n); return; }
+  if(d.remove){ S.pkg.items[d.remove].q=0; ev('remove_from_cart',{vare:d.remove}); render(); toast(P[d.remove].n+' er fjernet – se pakkesjekken'); return; }
+  if(d.unown){ S.pkg.items[d.unown].owned=false; render(); return; }
+  if(d.qty){ const it=S.pkg.items[d.qty]; it.q=Math.max(0,it.q+ +d.d); render(); return; }
+  if(d.add){ const it=S.pkg.items[d.add]; if(it){it.q=Math.max(1,it.q+ (it.q>0?1:1)); it.owned=false;} else S.pkg.items[d.add]={q:1,owned:false}; ev('add_to_cart',{vare:d.add,kilde:'har_du_husket'}); render(); toast(P[d.add].n+' lagt til'); return; }
+  if(d.fix && S.mode==='ansatt'){ const r=S.requests[S.openReq]; if(!r||r.status==='Tilbud sendt') return;
+    if(d.fm==='swapIface'){ const cur=Object.keys(r.items).find(id=>P[id].cat==='iface'&&r.items[id]>0); if(cur) delete r.items[cur]; r.items[d.fix]=1; }
+    else r.items[d.fix]=(r.items[d.fix]||0)+ +d.fq;
+    r.changed=[...(r.changed||[]),d.fix]; render(); toast('Lagt til i tilbudet'); return; }
+  if(d.fix){ const pk = S.pkg; if(!pk) return;
+    if(d.fm==='swapIface'){ const cur=Object.keys(pk.items).find(id=>P[id].cat==='iface' && pk.items[id].q>0); if(cur) delete pk.items[cur]; pk.items[d.fix]={q:1,owned:false}; }
+    else { const it=pk.items[d.fix]; if(it&&it.q>0&&!it.owned) it.q+= +d.fq; else pk.items[d.fix]={q:+d.fq,owned:false}; }
+    ev('pakkesjekk_fiks',{vare:d.fix}); render(); toast('Pakken er oppdatert'); return; }
+  if('buy' in d){ S.cart={...S.pkg,items:JSON.parse(JSON.stringify(S.pkg.items))}; ev('add_to_cart',{pakke:S.use+'/'+S.pkg.name,value:total(S.pkg)}); toast('Pakken ligger i handlekurven'); ev('begin_checkout',{value:total(S.pkg)}); go('cart'); return; }
+  if('order' in d){ const pkg=S.cart; USE=USE||USES[S.use]; S.order={no:'EM-TEST-'+(1000+Math.floor(Math.random()*900)),total:total(pkg),date:delivery(pkg).date}; ev('purchase',{value:S.order.total}); S.cart=null; go('order'); return; }
+  if('gloss' in d){ S.gloss=true; render(); return; }
+  if('evlog' in d){ S.evlog=!S.evlog; render(); return; }
+  // ansatt
+  if(d.openreq!==undefined){ S.openReq=+d.openreq; render(); window.scrollTo(0,0); return; }
+  if('staffback' in d){ S.openReq=null; render(); return; }
+  if(d.sqty){ const r=S.requests[S.openReq]; r.items[d.sqty]=Math.max(0,(r.items[d.sqty]||0)+ +d.d); r.changed=[...(r.changed||[]),d.sqty]; render(); return; }
+  if('saddbtn' in d){ const v=document.getElementById('sadd').value; if(!v) return; const r=S.requests[S.openReq]; r.items[v]=(r.items[v]||0)+1; r.changed=[...(r.changed||[]),v]; render(); return; }
+  if(d.tpl){ const r=S.requests[S.openReq]; const tp={1:'Hei! Jeg har sjekket pakken, og alt passer sammen. Alt er på lager, så den kan sendes i morgen.',2:'Hei! Jeg har gjort en endring i pakken (merket «Endret av selger»), fordi … Ellers passer alt sammen.',3:'Hei! Takk for at du skrev hva du har fra før. Utstyret ditt kan brukes sammen med pakken, men …'}[d.tpl]; r.svarUtkast=tp; render(); return; }
+  if('approve' in d){ const r=S.requests[S.openReq]; r.svar=document.getElementById('svar').value.trim()||'Pakken er sjekket, og alt passer sammen.'; r.status='Tilbud sendt'; ev('ordre_godkjent',{ref:r.ref,value:total(reqPkg(r))}); toast('Tilbud sendt til '+r.epost); render(); return; }
+  if('askinfo' in d){ const r=S.requests[S.openReq]; r.status='Venter på kunde'; toast('E-post sendt til kunden med spørsmål'); render(); return; }
+  if(d.viewoffer!==undefined){ S.offer=S.requests[+d.viewoffer]; S.mode='kunde'; go('offer'); return; }
+  if('acceptoffer' in d){ const r=S.offer; USE=USES[r.use]; S.use=r.use; S.cart={name:r.level,title:'Tilbud '+r.ref,items:Object.fromEntries(Object.entries(r.items).map(([k,q])=>[k,{q,owned:false}]))}; ev('begin_checkout',{kilde:'tilbud',ref:r.ref}); go('cart'); return; }
+});
+document.addEventListener('change',e=>{
+  const t=e.target; if(t.dataset.sswap&&t.value){ const r=S.requests[S.openReq]; const q=r.items[t.dataset.sswap]; delete r.items[t.dataset.sswap]; r.items[t.value]=q; r.changed=[...(r.changed||[]),t.value]; render(); }
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.dataset && e.target.dataset.openreq!==undefined){ S.openReq=+e.target.dataset.openreq; render(); } if(e.key==='Escape'&&S.gloss){S.gloss=false;render();} });
+// støtte for direkte lenker i test: #stream, #pod, #studio, #live, #ansatt
+(function(){const hsh=location.hash.slice(1); if(USES[hsh]){S.use=hsh;S.step=1;S.view='wizard';} if(hsh==='ansatt'){S.mode='ansatt';} })();
+render();
+</script>
+</body>
+</html>
